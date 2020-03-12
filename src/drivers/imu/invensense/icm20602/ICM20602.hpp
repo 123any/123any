@@ -73,12 +73,12 @@ private:
 	static constexpr uint32_t FIFO_MAX_SAMPLES{ math::min(FIFO::SIZE / sizeof(FIFO::DATA) + 1, sizeof(PX4Gyroscope::FIFOSample::x) / sizeof(PX4Gyroscope::FIFOSample::x[0]))};
 
 	// Transfer data
-	struct TransferBuffer {
+	struct FIFOTransferBuffer {
 		uint8_t cmd;
 		FIFO::DATA f[FIFO_MAX_SAMPLES];
 	};
 	// ensure no struct padding
-	static_assert(sizeof(TransferBuffer) == (sizeof(uint8_t) + FIFO_MAX_SAMPLES *sizeof(FIFO::DATA)));
+	static_assert(sizeof(FIFOTransferBuffer) == (sizeof(uint8_t) + FIFO_MAX_SAMPLES *sizeof(FIFO::DATA)));
 
 	struct register_config_t {
 		Register reg;
@@ -112,11 +112,9 @@ private:
 	bool FIFORead(const hrt_abstime &timestamp_sample, uint16_t samples);
 	void FIFOReset();
 
-	bool ProcessAccel(const hrt_abstime &timestamp_sample, const TransferBuffer *const buffer, uint8_t samples);
-	void ProcessGyro(const hrt_abstime &timestamp_sample, const TransferBuffer *const buffer, uint8_t samples);
-	bool ProcessTemperature(const TransferBuffer *const report, uint8_t samples);
-
-	uint8_t *_dma_data_buffer{nullptr};
+	bool ProcessAccel(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer, uint8_t samples);
+	void ProcessGyro(const hrt_abstime &timestamp_sample, const FIFOTransferBuffer &buffer, uint8_t samples);
+	bool ProcessTemperature(const FIFOTransferBuffer &buffer, uint8_t samples);
 
 	PX4Accelerometer _px4_accel;
 	PX4Gyroscope _px4_gyro;
@@ -161,7 +159,7 @@ private:
 		{ Register::ACCEL_CONFIG,  ACCEL_CONFIG_BIT::ACCEL_FS_SEL_16G, 0 },
 		{ Register::ACCEL_CONFIG2, ACCEL_CONFIG2_BIT::ACCEL_FCHOICE_B_BYPASS_DLPF, 0 },
 		{ Register::GYRO_CONFIG,   GYRO_CONFIG_BIT::FS_SEL_2000_DPS, GYRO_CONFIG_BIT::FCHOICE_B_8KHZ_BYPASS_DLPF },
-		{ Register::CONFIG,        CONFIG_BIT::DLPF_CFG_BYPASS_DLPF_8KHZ, Bit7 | CONFIG_BIT::FIFO_MODE },
+		{ Register::CONFIG,        CONFIG_BIT::DLPF_CFG_BYPASS_DLPF_8KHZ | CONFIG_BIT::FIFO_MODE, Bit7 },
 		{ Register::FIFO_WM_TH1,   0, 0 }, // FIFO_WM_TH[9:8]
 		{ Register::FIFO_WM_TH2,   0, 0 }, // FIFO_WM_TH[7:0]
 		{ Register::USER_CTRL,     USER_CTRL_BIT::FIFO_EN, 0 },

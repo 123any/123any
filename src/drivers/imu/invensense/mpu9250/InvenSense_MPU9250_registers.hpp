@@ -42,6 +42,8 @@
 
 #include <cstdint>
 
+namespace InvenSense_MPU9250
+{
 // TODO: move to a central header
 static constexpr uint8_t Bit0 = (1 << 0);
 static constexpr uint8_t Bit1 = (1 << 1);
@@ -52,8 +54,7 @@ static constexpr uint8_t Bit5 = (1 << 5);
 static constexpr uint8_t Bit6 = (1 << 6);
 static constexpr uint8_t Bit7 = (1 << 7);
 
-namespace InvenSense_MPU9250
-{
+
 static constexpr uint32_t SPI_SPEED = 1 * 1000 * 1000;
 static constexpr uint32_t SPI_SPEED_SENSOR = 20 * 1000 * 1000; // 20MHz for reading sensor and interrupt registers
 static constexpr uint8_t DIR_READ = 0x80;
@@ -70,11 +71,27 @@ enum class Register : uint8_t {
 	ACCEL_CONFIG2 = 0x1D,
 
 	FIFO_EN       = 0x23,
+	I2C_MST_CTRL  = 0x24,
+	I2C_SLV0_ADDR = 0x25,
+	I2C_SLV0_REG  = 0x26,
+	I2C_SLV0_CTRL = 0x27,
+
+	I2C_SLV4_CTRL = 0x34,
+
+	I2C_MST_STATUS = 0x36,
 
 	INT_ENABLE    = 0x38,
 
 	TEMP_OUT_H    = 0x41,
 	TEMP_OUT_L    = 0x42,
+
+	EXT_SENS_DATA_00 = 0x49, // EXT_SENS_DATA_00[7:0]
+	// EXT_SENS_DATA_01 - EXT_SENS_DATA_22
+	EXT_SENS_DATA_23 = 0x60, // EXT_SENS_DATA_23[7:0]
+
+	I2C_SLV0_DO   = 0x63,    // Data out when slave 0 is set to write
+
+	I2C_MST_DELAY_CTRL = 0x67,
 
 	USER_CTRL     = 0x6A,
 	PWR_MGMT_1    = 0x6B,
@@ -129,10 +146,53 @@ enum FIFO_EN_BIT : uint8_t {
 	ACCEL     = Bit3,
 };
 
+// I2C_MST_CTRL
+enum I2C_MST_CTRL_BIT : uint8_t {
+	WAIT_FOR_ES   = Bit6, // Delays the data ready interrupt until external sensor data is loaded
+	I2C_MST_P_NSR = Bit4, // I2C Master’s transition from one slave read to the next slave read
+
+	// I2C_MST_CLK [3:0]
+	I2C_MST_CLK_400_kHz = 13,
+};
+
+// I2C_SLV0_ADDR
+enum I2C_SLV0_ADDR_BIT : uint8_t {
+	I2C_SLV0_RNW = Bit7, // 1 – Transfer is a read
+
+	// I2C_ID_0[6:0]
+	I2C_ID_0 = Bit6 | Bit5 | Bit4 | Bit3 | Bit2 | Bit1 | Bit0, // Physical address of I2C slave 0
+};
+
+// I2C_SLV0_CTRL
+enum I2C_SLV0_CTRL_BIT : uint8_t {
+	I2C_SLV0_EN      = Bit7, // Enable reading data from this slave
+	I2C_SLV0_BYTE_SW = Bit6, // Swap bytes when reading both the low and high byte of a word
+	I2C_SLV0_REG_DIS = Bit5, // transaction does not write a register value (only read data)
+
+	I2C_SLV0_LENG    = Bit3 | Bit2 | Bit1 | Bit0, // Number of bytes to be read from I2C slave 0
+};
+
+// I2C_SLV4_CTRL
+enum I2C_SLV4_CTRL_BIT : uint8_t {
+	// I2C_MST_DLY[4:0]
+	I2C_MST_DLY = Bit4 | Bit3 | Bit2 | Bit1 | Bit0,
+};
+
 // INT_ENABLE
 enum INT_ENABLE_BIT : uint8_t {
 	FIFO_OFLOW_EN = Bit4,
 	RAW_RDY_EN    = Bit0
+};
+
+// I2C_MST_DELAY_CTRL
+enum I2C_MST_DELAY_CTRL_BIT : uint8_t {
+	I2C_SLV4_DLY_EN = Bit4,
+	I2C_SLV3_DLY_EN = Bit3,
+	I2C_SLV2_DLY_EN = Bit2,
+	I2C_SLV1_DLY_EN = Bit1,
+	I2C_SLV0_DLY_EN = Bit0,
+
+	I2C_SLVX_DLY_EN = Bit4 | Bit3 | Bit2 | Bit1 | Bit0, // limit all slave access (1+I2C_MST_DLY)
 };
 
 // USER_CTRL
